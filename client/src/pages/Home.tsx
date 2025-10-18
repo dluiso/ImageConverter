@@ -1,5 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import JSZip from "jszip";
+import { PlayCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Header } from "@/components/Header";
 import { FormatSelector, type ImageFormat } from "@/components/FormatSelector";
 import { UploadZone } from "@/components/UploadZone";
@@ -13,6 +15,7 @@ export default function Home() {
   const [images, setImages] = useState<ImageItem[]>([]);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isConverting, setIsConverting] = useState(false);
+  const [hasStartedConversion, setHasStartedConversion] = useState(false);
 
   useEffect(() => {
     if (!isConverting || images.length === 0) return;
@@ -31,28 +34,23 @@ export default function Home() {
       preview: URL.createObjectURL(file),
       status: "pending" as const,
       progress: 0,
+      targetFormat: selectedFormat,
     }));
 
     setImages((prev) => [...prev, ...newImages]);
-    setElapsedSeconds(0);
-    setIsConverting(true);
-
-    newImages.forEach((image) => {
-      convertSingleImage(image);
-    });
   }, [selectedFormat]);
 
   const convertSingleImage = async (image: ImageItem) => {
     setImages((prev) =>
       prev.map((img) =>
-        img.id === image.id ? { ...img, status: "converting" as const } : img
+        img.id === image.id ? { ...img, status: "converting" as const, progress: 0 } : img
       )
     );
 
     try {
       const blob = await convertImage(
         image.file,
-        selectedFormat,
+        image.targetFormat,
         (progress) => {
           setImages((prev) =>
             prev.map((img) =>
@@ -84,6 +82,32 @@ export default function Home() {
     }
   };
 
+  const handleStartConversion = useCallback(() => {
+    setHasStartedConversion(true);
+    setElapsedSeconds(0);
+    setIsConverting(true);
+
+    const pendingImages = images.filter((img) => img.status === "pending");
+    pendingImages.forEach((image) => {
+      convertSingleImage(image);
+    });
+  }, [images]);
+
+  const handleFormatChange = useCallback((id: string, newFormat: ImageFormat) => {
+    setImages((prev) =>
+      prev.map((img) =>
+        img.id === id ? { ...img, targetFormat: newFormat } : img
+      )
+    );
+  }, []);
+
+  const handleReconvert = useCallback((id: string) => {
+    const image = images.find((img) => img.id === id);
+    if (image) {
+      convertSingleImage(image);
+    }
+  }, [images]);
+
   const handleDownload = useCallback((id: string) => {
     const image = images.find((img) => img.id === id);
     if (!image || !image.convertedBlob) return;
@@ -91,12 +115,12 @@ export default function Home() {
     const url = URL.createObjectURL(image.convertedBlob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = generateFileName(image.file.name, selectedFormat);
+    a.download = generateFileName(image.file.name, image.targetFormat);
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [images, selectedFormat]);
+  }, [images]);
 
   const handleRemove = useCallback((id: string) => {
     setImages((prev) => {
@@ -116,7 +140,7 @@ export default function Home() {
     const zip = new JSZip();
 
     completedImages.forEach((image) => {
-      const fileName = generateFileName(image.file.name, selectedFormat);
+      const fileName = generateFileName(image.file.name, image.targetFormat);
       zip.file(fileName, image.convertedBlob!);
     });
 
@@ -124,21 +148,23 @@ export default function Home() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `converted-images-${selectedFormat}.zip`;
+    a.download = `converted-images.zip`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  }, [images, selectedFormat]);
+  }, [images]);
 
   const completedCount = images.filter((img) => img.status === "completed").length;
+  const pendingCount = images.filter((img) => img.status === "pending").length;
   const hasImages = images.length > 0;
+  const showConvertButton = pendingCount > 0 && !isConverting;
 
   useEffect(() => {
-    if (completedCount === images.length && images.length > 0) {
+    if (completedCount === images.length && images.length > 0 && hasStartedConversion) {
       setIsConverting(false);
     }
-  }, [completedCount, images.length]);
+  }, [completedCount, images.length, hasStartedConversion]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -165,20 +191,37 @@ export default function Home() {
             <UploadZone onFilesSelected={handleFilesSelected} />
           ) : (
             <div className="space-y-4">
-              <OverallProgress
-                completedCount={completedCount}
-                totalCount={images.length}
-                elapsedSeconds={elapsedSeconds}
-              />
+              {showConvertButton && (
+                <div className="flex justify-center">
+                  <Button
+                    size="lg"
+                    onClick={handleStartConversion}
+                    className="gap-2"
+                    data-testid="button-convert-now"
+                  >
+                    <PlayCircle className="h-5 w-5" />
+                    Convert {pendingCount} {pendingCount === 1 ? "Image" : "Images"} Now
+                  </Button>
+                </div>
+              )}
+
+              {hasStartedConversion && (
+                <OverallProgress
+                  completedCount={completedCount}
+                  totalCount={images.length}
+                  elapsedSeconds={elapsedSeconds}
+                />
+              )}
 
               <div className="space-y-3">
                 {images.map((image) => (
                   <ImageCard
                     key={image.id}
                     image={image}
-                    targetFormat={selectedFormat}
                     onDownload={handleDownload}
                     onRemove={handleRemove}
+                    onFormatChange={handleFormatChange}
+                    onReconvert={handleReconvert}
                   />
                 ))}
               </div>

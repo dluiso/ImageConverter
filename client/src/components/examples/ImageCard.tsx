@@ -7,6 +7,7 @@ const mockImage: ImageItem = {
   preview: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100'%3E%3Crect fill='%236366f1' width='100' height='100'/%3E%3C/svg%3E",
   status: "completed",
   progress: 100,
+  targetFormat: "webp",
 };
 
 export default function ImageCardExample() {
@@ -15,9 +16,10 @@ export default function ImageCardExample() {
       <div className="p-8 max-w-md">
         <ImageCard
           image={mockImage}
-          targetFormat="webp"
           onDownload={(id) => console.log("Download:", id)}
           onRemove={(id) => console.log("Remove:", id)}
+          onFormatChange={(id, format) => console.log("Format changed:", id, format)}
+          onReconvert={(id) => console.log("Reconvert:", id)}
         />
       </div>
     </ThemeProvider>

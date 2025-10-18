@@ -1,5 +1,12 @@
-import { Check, X, Loader2, Download, Trash2 } from "lucide-react";
+import { Check, X, Loader2, Download, Trash2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ProgressBar } from "./ProgressBar";
 import type { ImageFormat } from "./FormatSelector";
 
@@ -11,18 +18,22 @@ export interface ImageItem {
   preview: string;
   status: ConversionStatus;
   progress: number;
+  targetFormat: ImageFormat;
   convertedBlob?: Blob;
   error?: string;
 }
 
 interface ImageCardProps {
   image: ImageItem;
-  targetFormat: ImageFormat;
   onDownload: (id: string) => void;
   onRemove: (id: string) => void;
+  onFormatChange: (id: string, format: ImageFormat) => void;
+  onReconvert: (id: string) => void;
 }
 
-export function ImageCard({ image, targetFormat, onDownload, onRemove }: ImageCardProps) {
+const formatOptions: ImageFormat[] = ["jpeg", "png", "webp", "gif", "bmp", "tiff", "ico"];
+
+export function ImageCard({ image, onDownload, onRemove, onFormatChange, onReconvert }: ImageCardProps) {
   const formatFileSize = (bytes: number): string => {
     if (bytes < 1024) return bytes + " B";
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
@@ -56,23 +67,51 @@ export function ImageCard({ image, targetFormat, onDownload, onRemove }: ImageCa
           <p className="text-sm font-medium text-card-foreground truncate" data-testid={`text-filename-${image.id}`}>
             {image.file.name}
           </p>
-          <p className="text-xs text-muted-foreground">
-            {formatFileSize(image.file.size)} → {targetFormat.toUpperCase()}
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="text-xs text-muted-foreground">
+              {formatFileSize(image.file.size)} →
+            </p>
+            <Select
+              value={image.targetFormat}
+              onValueChange={(value) => onFormatChange(image.id, value as ImageFormat)}
+              disabled={image.status === "converting"}
+            >
+              <SelectTrigger className="h-6 w-20 text-xs" data-testid={`select-format-${image.id}`}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {formatOptions.map((format) => (
+                  <SelectItem key={format} value={format}>
+                    {format.toUpperCase()}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           {getStatusIcon()}
           
           {image.status === "completed" && (
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => onDownload(image.id)}
-              data-testid={`button-download-${image.id}`}
-            >
-              <Download className="h-4 w-4" />
-            </Button>
+            <>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => onDownload(image.id)}
+                data-testid={`button-download-${image.id}`}
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => onReconvert(image.id)}
+                data-testid={`button-reconvert-${image.id}`}
+              >
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </>
           )}
           
           <Button
