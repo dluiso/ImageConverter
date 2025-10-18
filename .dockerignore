@@ -1,0 +1,75 @@
+# Dependencies
+node_modules
+npm-debug.log
+
+# Build outputs (will be created during build)
+dist
+build
+
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Documentation
+README.md
+CHANGELOG.md
+*.md
+
+# Testing
+coverage
+.nyc_output
+__tests__
+*.test.js
+*.test.ts
+*.spec.js
+*.spec.ts
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Logs
+logs
+*.log
+
+# Temporary files
+.tmp
+temp
+*.tmp
+
+# Replit specific
+.replit
+replit.nix
+replit.md
+.upm
+.breakpoints
+.replit_metadata
+
+# Database files (if any local db)
+*.db
+*.sqlite
+
+# Design files
+design_guidelines.md
