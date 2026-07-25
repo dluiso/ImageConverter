@@ -34,7 +34,7 @@ A modern, privacy-focused web application for converting images between multiple
 
 1. Clone the repository:
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/dluiso/ImageConverter.git
 cd image-converter
 ```
 
@@ -153,7 +153,7 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-MIT License - feel free to use this project for personal or commercial purposes.
+This project is licensed under the [MIT License](LICENSE). You may use, copy, modify, distribute, and use it commercially under the terms of that license.
 
 ## Privacy
 
